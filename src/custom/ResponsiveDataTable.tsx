@@ -1,8 +1,8 @@
+import { alpha, type CheckboxProps } from '@mui/material';
 import MUIDataTable, { MUIDataTableColumn } from '@sistent/mui-datatables';
 import React, { useCallback } from 'react';
 import { Checkbox, Collapse, ListItemIcon, ListItemText, Menu, MenuItem } from '../base';
-import { FilterAllIcon } from '../icons/FilterAll/FilterAllIcon';
-import { ShareIcon } from '../icons';
+import { FilterAllIcon, ShareIcon } from '../icons';
 import { EllipsisIcon } from '../icons/Ellipsis';
 import { FormattedTime } from '../utils';
 import { styled, useTheme } from './../theme';
@@ -149,6 +149,61 @@ export interface ResponsiveDataTableProps {
   colViews?: ColView[];
   rowsPerPageOptions?: number[] | undefined;
 }
+
+/**
+ * mui-datatables tags the select-all cell in the table header with
+ * `data-description="row-select-header"`, which is what distinguishes it from the
+ * per-row checkboxes ('row-select'). Only that header checkbox gets FilterAllIcon,
+ * so a table-wide action never looks like a row-level one (see issue #1761).
+ *
+ * `checkedIcon` and `indeterminateIcon` are deliberately left alone: the theme
+ * already supplies `checkedIcon`, and leaving the indeterminate state on the MUI
+ * default matches the select-all control in Meshery's context dropdown that #1761
+ * points at as the reference.
+ *
+ * The icon is filled with the brand colour at 40% rather than inheriting
+ * `currentColor`, to match that same reference (meshery/meshery#19004). Inheriting
+ * would render it in the checkbox's own colour, which in dark mode is exactly the
+ * colour of the row checkboxes - leaving shape as the only thing telling a
+ * table-wide action apart from a row-level one, in the very mode #1761 was
+ * filed against. The trade-off is that a fixed fill no longer dims itself when
+ * the checkbox is disabled; no caller disables this one today.
+ */
+type DataTableCheckboxProps = CheckboxProps & { 'data-description'?: string };
+
+const DataTableCheckbox = React.forwardRef<HTMLButtonElement, DataTableCheckboxProps>(
+  (props, ref) => {
+    const theme = useTheme();
+
+    if (props['data-description'] !== 'row-select-header') {
+      return <Checkbox {...props} ref={ref} />;
+    }
+
+    // alpha() throws on an undefined colour, so fall back to the icon's own
+    // `currentColor` default if a consumer's theme has no brand background.
+    const brand = theme.palette.background.brand?.default;
+
+    return (
+      <Checkbox
+        {...props}
+        ref={ref}
+        disableRipple
+        icon={<FilterAllIcon fill={brand ? alpha(brand, 0.4) : undefined} />}
+        slotProps={{
+          ...props.slotProps,
+          input: { 'aria-label': 'select all rows', ...props.slotProps?.input }
+        }}
+      />
+    );
+  }
+);
+DataTableCheckbox.displayName = 'DataTableCheckbox';
+
+const components = {
+  ExpandButton: () => '',
+  Checkbox: DataTableCheckbox
+};
+
 const ResponsiveDataTable = ({
   data,
   columns,
@@ -237,31 +292,6 @@ const ResponsiveDataTable = ({
   React.useEffect(() => {
     updateColumnsEffect();
   }, [updateColumnsEffect]);
-
-  const DataTableCheckbox = React.useMemo(
-    () =>
-      React.forwardRef((props: Record<string, unknown>, ref: React.Ref<HTMLButtonElement>) => {
-        const isHeaderCheckbox = props['data-description'] === 'row-select-header';
-
-        if (isHeaderCheckbox) {
-          return (
-            <Checkbox
-              {...props}
-              ref={ref}
-              icon={<FilterAllIcon fill="currentColor" />}
-            />
-          );
-        }
-
-        return <Checkbox {...props} ref={ref} />;
-      }),
-    []
-  );
-
-  const components = {
-    ExpandButton: () => '',
-    Checkbox: DataTableCheckbox
-  };
 
   return (
     <MUIDataTable
