@@ -151,25 +151,6 @@ export interface ResponsiveDataTableProps {
   rowsPerPageOptions?: number[] | undefined;
 }
 
-/**
- * mui-datatables tags the select-all cell in the table header with
- * `data-description="row-select-header"`, which is what distinguishes it from the
- * per-row checkboxes ('row-select'). Only that header checkbox gets FilterAllIcon,
- * so a table-wide action never looks like a row-level one (see issue #1761).
- *
- * `checkedIcon` and `indeterminateIcon` are deliberately left alone: the theme
- * already supplies `checkedIcon`, and leaving the indeterminate state on the MUI
- * default matches the select-all control in Meshery's context dropdown that #1761
- * points at as the reference.
- *
- * The icon is filled with the brand colour at 40% rather than inheriting
- * `currentColor`, to match that same reference (meshery/meshery#19004). Inheriting
- * would render it in the checkbox's own colour, which in dark mode is exactly the
- * colour of the row checkboxes - leaving shape as the only thing telling a
- * table-wide action apart from a row-level one, in the very mode #1761 was
- * filed against. The trade-off is that a fixed fill no longer dims itself when
- * the checkbox is disabled; no caller disables this one today.
- */
 type DataTableCheckboxProps = CheckboxProps & { 'data-description'?: string };
 
 const DataTableCheckbox = React.forwardRef<HTMLButtonElement, DataTableCheckboxProps>(
@@ -180,8 +161,6 @@ const DataTableCheckbox = React.forwardRef<HTMLButtonElement, DataTableCheckboxP
       return <Checkbox {...props} ref={ref} />;
     }
 
-    // alpha() throws on an undefined colour, so fall back to the icon's own
-    // `currentColor` default if a consumer's theme has no brand background.
     const brand = theme.palette.background.brand?.default;
 
     return (
@@ -217,11 +196,9 @@ const ResponsiveDataTable = ({
 }: ResponsiveDataTableProps): JSX.Element => {
   const textLabels = options?.textLabels || {};
   const bodyTextLabels = textLabels.body || {};
-  
+
   const noMatchMessage =
-    typeof bodyTextLabels.noMatch === 'string'
-      ? bodyTextLabels.noMatch
-      : 'No data available';
+    typeof bodyTextLabels.noMatch === 'string' ? bodyTextLabels.noMatch : 'No data available';
 
   const updatedOptions = {
     ...options,

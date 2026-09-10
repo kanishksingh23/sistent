@@ -2,14 +2,6 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { SistentThemeProvider } from '../theme';
 
-/**
- * `ResponsiveDataTable` hands mui-datatables a custom `components.Checkbox`, and the
- * only thing that tells the select-all checkbox apart from a row checkbox is the
- * `data-description` mui-datatables puts on it. The sibling ResponsiveDataTable test
- * mocks the datatable as a plain <table> and drops `components` entirely, so nothing
- * routed through it exercises that wiring. This mock renders `components.Checkbox`
- * for both cases instead, which is what makes the assertions below meaningful.
- */
 jest.mock('@sistent/mui-datatables', () => {
   const MockMUIDataTable = ({
     components
@@ -52,7 +44,6 @@ const renderTable = () =>
     </SistentThemeProvider>
   );
 
-// FilterAllIcon's distinguishing path; the base Checkbox icons do not contain it.
 const FILTER_ALL_PATH_PREFIX = 'M3 5h2V3c-1.1 0-2 .9-2 2z';
 
 const iconPathOf = (checkbox: HTMLElement) =>
